@@ -4,24 +4,15 @@
 library(tidyverse)
 
 # 1. Configurazione del Portafoglio Reale Attuale (Base ~30k € da image_a15d04.png)
-# Inseriamo i controvalori attuali precisi in Euro per far partire la simulazione la situazione odierna
-portafoglio_iniziale <- c(
-  "Bond_Global"     = 5829.00, # Corrisponde al ~19.43% di 30k
-  "World_ex_USA"    = 5244.00, # Corrisponde al ~17.48% di 30k
-  "World_Equal_W"   = 3846.00, # Corrisponde al ~12.82% di 30k
-  "SP500"           = 3477.00, # Corrisponde al ~11.59% di 30k
-  "Emerging_Markets"= 2487.00, # Corrisponde al ~08.29% di 30k
-  "World_Value"     = 2217.00, # Corrisponde al ~07.39% di 30k
-  "World_Mid_Cap"   = 2034.00, # Corrisponde al ~06.78% di 30k
-  "Gold"            = 1881.00, # Corrisponde al ~06.27% di 30k
-  "World_Momentum"  = 1641.00, # Corrisponde al ~05.47% di 30k
-  "World_Small_Cap" = 1344.00  # Corrisponde al ~04.48% di 30k
-)
+somma_iniziale <- 33818
+
+portafoglio_iniziale <- target_weights * 33818
+sum(portafoglio_inziale)
 
 # Parametri Simulazione
 orizzonte_mesi <- 360    # Durata della simulazione (es. 10 anni di PAC)
 quota_mensile  <- 1000   # PAC mensile
-n_simulazioni  <- 10000    # Numero di "vite parallele" (scenari) da simulare
+n_simulazioni  <- 100    # Numero di "vite parallele" (scenari) da simulare
 nomi_asset     <- names(target_weights)
 
 # Matrice per salvare il valore finale di ogni singola simulazione
