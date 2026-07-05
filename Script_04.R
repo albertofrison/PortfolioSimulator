@@ -4,8 +4,8 @@
 library(tidyverse)
 library(ggplot2)
 
-# 1. Configurazione del Portafoglio Reale Attuale (Base ~30k € da image_a15d04.png)
-somma_iniziale <- 33818
+# 1. Configurazione del Portafoglio Reale Attuale (Base ~30k €)
+somma_iniziale <- 30000
 
 portafoglio_iniziale <- target_weights * 33818
 sum(portafoglio_inziale)
@@ -89,8 +89,8 @@ ggplot(df_scenari, aes(x = Valore_Finale)) +
   
   labs(
     title = "Distribuzione dei Valori Finali del Portafoglio (Monte Carlo)",
-    subtitle = paste0("Simulazione su ", n_simulazioni, " scenari stocastici (Bootstrap) | Orizzonte: ", orizzonte_mesi/12, " anni\n",
-                      "Linee tratteggiate: Rosso = 10% (Pessimo) | Arancio = 50% (Mediano) | Verde = 90% (Ottimo)"),
+    subtitle = paste0("Simulazione su ", n_simulazioni, " (estrazione casuale rendimento mensile dal dataset) | Orizzonte: ", orizzonte_mesi/12, " anni\n",
+                      "Valore Portafoglio negli scenari: Rosso = 10° percentile (Pessimo) | Arancio = Mediana | Verde = 90° Percentile (Ottimo)"),
     x = "Controvalore Finale Portafoglio (€)",
     y = "Frequenza (Numero di Scenari)"
   ) +
@@ -101,3 +101,4 @@ ggplot(df_scenari, aes(x = Valore_Finale)) +
     panel.grid.minor = element_blank(),
     axis.title.x.top = element_text(color = "blue4", size = 10, face = "italic")
   )
+

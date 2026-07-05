@@ -16,17 +16,12 @@ pdf(file = file_pdf, width = 11, height = 7, onefile = TRUE)
 # p_grafico è l'oggetto ggplot dei tuoi 10 facet sviluppato al punto 7
 # testo_legenda è la stringa con la mappa dei sottostanti
 grid::grid.newpage() # Pulisce la pagina corrente
-p1 <- ggdraw(p_grafico) +
-  draw_label(
-    testo_legenda, 
-    x = 0.72, y = 0.13,          
-    hjust = 0, vjust = 0.5,       
-    fontface = "bold", 
-    size = 8, 
-    color = "gray20",
-    lineheight = 1.25
-  )
-print(p1)
+
+print(p_grafico)
+
+
+print(p_cumulativo)
+
 
 # ------------------------------------------------------------------------------
 # PAGINA 2: La Matrice di Correlazione Professionale (Mappa RdYlBu)

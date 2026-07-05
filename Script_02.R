@@ -98,15 +98,15 @@ dati_long_con_etichette <- dataset_rendimenti %>%
 
 # 2. Creazione del grafico principale (solo i 10 facet degli ETF)
 p_grafico <- ggplot(dati_long_con_etichette, aes(x = Rendimento)) +
-  geom_histogram(bins = 30, fill = "gray40", color = "white", alpha = 0.8) +
+  geom_histogram(bins = 30, fill = "aquamarine2", color = "azure3", alpha = 0.8) +
   
   geom_vline(data = metriche_grafico, aes(xintercept = Media),
-             color = "red", linetype = "dashed", linewidth = 0.8) +
+             color = "red", linetype = "solid", linewidth = 0.8) +
   
   geom_vline(data = metriche_grafico, aes(xintercept = Media + DevStd),
-             color = "deepskyblue3", linetype = "solid", linewidth = 0.5) +
+             color = "deepskyblue3", linetype = "dashed", linewidth = 0.8) +
   geom_vline(data = metriche_grafico, aes(xintercept = Media - DevStd),
-             color = "deepskyblue3", linetype = "solid", linewidth = 0.5) +
+             color = "deepskyblue3", linetype = "dashed", linewidth = 0.8) +
   
   facet_wrap(~ Asset_Label, scales = "free_y", ncol = 3) +
   
@@ -115,43 +115,19 @@ p_grafico <- ggplot(dati_long_con_etichette, aes(x = Rendimento)) +
     title = "Distribuzione dei Rendimenti Mensili Storici (in EUR)",
     subtitle = "Linea rossa: Media (μ) | Linee azzurre: Media +/- Deviazione Standard (σ)",
     x = "Rendimento Mensile",
-    y = "Frequenza (Mesi)"
+    y = "Frequenza (Mesi)",
+    caption = "Made in R and with ❤︎ by Alberto Frison - Source data Yahoo Finance"
   ) +
   theme_minimal(base_size = 11) +
   theme(
-    strip.background = element_rect(fill = "gray95", color = "gray80"),
-    strip.text = element_text(face = "bold", color = "gray20", size = 8.5),
+    strip.background = element_rect(fill = "azure2", color = "azure3"),
+    strip.text = element_text(face = "bold", color = "black", size = 8.5),
     panel.grid.minor = element_blank(),
     plot.title = element_text(face = "bold", size = 14, margin = margin(b = 5)),
-    plot.subtitle = element_text(color = "gray40", margin = margin(b = 15))
+    plot.subtitle = element_text(color = "black", margin = margin(b = 15))
   )
 
-# 3. Testo dettagliato della legenda
-testo_legenda <- paste0(
-  "📋 MAPPA SOTTOSTANTI (PROXY USA):\n",
-  "• Bond_Global: Aggregate Bond (AGG)        ",
-  "• Emerging_Markets: MSCI EM (EEM)\n",
-  "• Gold: Gold Shares (GLD)        ",
-  "• SP500: S&P 500 ETF (SPY)\n",
-  "• World_Equal_W: S&P 500 EW (RSP)        ",
-  "• World_ex_USA: MSCI ACWI ex-US (CWI)\n",
-  "• World_Mid_Cap: S&P Mid-Cap (IJH)        ",
-  "• World_Momentum: DWA Momentum (PDP)\n",
-  "• World_Small_Cap: Russell 2000 (IWM)        ",
-  "• World_Value: S&P 500 Value (IVE)\n\n",
-  "📌 Source: Yahoo Finance via quantmod        - ",
-  "✍️ Made with love by Alberto Frison"
-)
 
 # 4. Sovrapposizione del box di testo nello slot vuoto (in basso a destra)
 # Sfruttiamo draw_plot_label o draw_label posizionandola nel quadrante relativo
-ggdraw(p_grafico) +
-  draw_label(
-    testo_legenda, 
-    x = 0.72, y = 0.13,          # Coordinate relative allo schermo intero
-    hjust = 0, vjust = 0.5,       # Allineamento a sinistra
-    fontface = "bold", 
-    size = 8, 
-    color = "gray20",
-    lineheight = 1.25
-  )
+ggdraw(p_grafico)
