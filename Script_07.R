@@ -15,7 +15,7 @@ pdf(file = file_pdf, width = 11, height = 7, onefile = TRUE)
 # ------------------------------------------------------------------------------
 # p_grafico è l'oggetto ggplot dei tuoi 10 facet sviluppato al punto 7
 # testo_legenda è la stringa con la mappa dei sottostanti
-grid::grid.newpage() # Pulisce la pagina corrente
+#grid::grid.newpage() # Pulisce la pagina corrente
 
 print(p_grafico)
 

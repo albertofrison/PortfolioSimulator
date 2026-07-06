@@ -19,7 +19,7 @@ df_correlazione_long$ETF_Var2 <- factor(df_correlazione_long$ETF_Var2, levels = 
 # ==============================================================================
 # 13. GENERAZIONE DEL GRAFICO CON PALETTE DOTTRINALE (RdBu)
 # ==============================================================================
-ggplot(df_correlazione_long, aes(x = ETF_Var1, y = ETF_Var2, fill = Correlazione)) +
+p_corr <- ggplot(df_correlazione_long, aes(x = ETF_Var1, y = ETF_Var2, fill = Correlazione)) +
   # Quadrati con linee di separazione sottili e neutre
   geom_tile(color = "white", linewidth = 0.3) +
   
@@ -46,7 +46,7 @@ ggplot(df_correlazione_long, aes(x = ETF_Var1, y = ETF_Var2, fill = Correlazione
     subtitle = "Palette divergente standard: Blu = Correlazione Positiva | Bianco/Giallo = Incorrelati | Rosso = Correlazione Inversa",
     x = NULL,
     y = NULL,
-    caption = "Made with love in R by Alberto Frison"
+    caption = "Made in R and with love by Alberto Frison - Source data Yahoo Finance"
   ) +
   
   theme_minimal(base_size = 11) +
@@ -61,3 +61,5 @@ ggplot(df_correlazione_long, aes(x = ETF_Var1, y = ETF_Var2, fill = Correlazione
     legend.title = element_text(face = "bold", size = 9),
     legend.text = element_text(size = 8)
   )
+
+p_corr

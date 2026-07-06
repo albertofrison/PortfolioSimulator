@@ -116,7 +116,7 @@ p_grafico <- ggplot(dati_long_con_etichette, aes(x = Rendimento)) +
     subtitle = "Linea rossa: Media (μ) | Linee azzurre: Media +/- Deviazione Standard (σ)",
     x = "Rendimento Mensile",
     y = "Frequenza (Mesi)",
-    caption = "Made in R and with ❤︎ by Alberto Frison - Source data Yahoo Finance"
+    caption = "Made in R and with love by Alberto Frison - Source data Yahoo Finance"
   ) +
   theme_minimal(base_size = 11) +
   theme(

@@ -7,7 +7,7 @@ library(ggplot2)
 # 1. Configurazione del Portafoglio Reale Attuale (Base ~30k €)
 somma_iniziale <- 30000
 
-portafoglio_iniziale <- target_weights * 33818
+portafoglio_iniziale <- target_weights * somma_iniziale
 sum(portafoglio_inziale)
 
 # Parametri Simulazione (Aumentiamo a 1.000 simulazioni per un istogramma più denso e preciso)
@@ -56,32 +56,94 @@ for (s in 1:n_simulazioni) {
 df_scenari <- tibble(Valore_Finale = risultati_scenari) %>%
   mutate(Multiplo_Capitale = Valore_Finale / capitale_investito_totale)
 
-# Calcolo percentili per le linee verticali di controllo nel grafico
-p10 <- quantile(risultati_scenari, 0.10)
-p50 <- quantile(risultati_scenari, 0.50)
-p90 <- quantile(risultati_scenari, 0.90)
+# ==============================================================================
+# CALCOLO METRICHE E CAGR (FORMULA RICHIESTA)
+# ==============================================================================
+n_anni <- orizzonte_mesi / 12
+capitale_iniziale_assoluto <- sum(portafoglio_iniziale)
 
 # ==============================================================================
-# 10. PLOT DELL'ISTOGRAMMA DELLA DISTRIBUZIONE FINALE
+# CALCOLO RIGOROSO DEL CAGR PER UN PAC (IRR PERIODICO ANNUALIZZATO)
 # ==============================================================================
-ggplot(df_scenari, aes(x = Valore_Finale)) +
+if (!require("FinCal")) install.packages("FinCal")
+library(FinCal)
+
+# 1. Prepariamo la struttura dei flussi di cassa reali del tuo PAC:
+# Mese 0: Esce il Capitale Iniziale attuale (~30k)
+# Mesi da 1 a 120: Escono 1.000 € al mese come quota PAC
+flussi_base <- c(-sum(portafoglio_iniziale), rep(-quota_mensile, orizzonte_mesi))
+
+# 2. Funzione per calcolare il CAGR reale inserendo il Valore Finale dello scenario
+calcola_cagr_pac <- function(valore_finale) {
+  flussi_scenario <- flussi_base
+  # All'ultimo mese sommiamo il controvalore finale liquidato (segno positivo)
+  flussi_scenario[length(flussi_scenario)] <- flussi_scenario[length(flussi_scenario)] + valore_finale
+  
+  # Calcolo del tasso interno di rendimento mensile
+  tasso_mensile <- FinCal::irr(flussi_scenario)
+  
+  # Annualizzazione del tasso (CAGR reale composto)
+  cagr_annuo <- ((1 + tasso_mensile)^12 - 1) * 100
+  return(cagr_annuo)
+}
+
+# 3. Ricalcolo corretto dei CAGR per i tre percentili
+cagr_p10 <- calcola_cagr_pac(p10)
+cagr_p50 <- calcola_cagr_pac(p50)
+cagr_p90 <- calcola_cagr_pac(p90)
+
+# ==============================================================================
+# AGGIORNAMENTO ETICHETTE DINAMICHE PER IL GRAFICO
+# ==============================================================================
+fmt_euro <- function(x) format(round(x), big.mark = ".", decimal.mark = ",")
+
+lbl_cap_investito <- paste0("Capitale Investito: ", fmt_euro(capitale_investito_totale), " €")
+lbl_pessimo       <- paste0("Pessimo (10%): ", fmt_euro(p10), " € (CAGR: ", sprintf("%.2f%%", cagr_p10), ")")
+lbl_mediano       <- paste0("Mediano (50%): ", fmt_euro(p50), " € (CAGR: ", sprintf("%.2f%%", cagr_p50), ")")
+lbl_ottimo        <- paste0("Ottimo (90%): ", fmt_euro(p90), " € (CAGR: ", sprintf("%.2f%%", cagr_p90), ")")
+
+
+
+
+
+
+
+
+
+
+# ==============================================================================
+# GRAFICO MONTE CARLO AGGIORNATO CON ETICHETTE DINAMICHE SULLE LINEE
+# ==============================================================================
+p_montecarlo <- ggplot(df_scenari, aes(x = Valore_Finale)) +
   # Istogramma delle frequenze dei portafogli finali
-  geom_histogram(bins = 40, fill = "cadetblue4", color = "white", alpha = 0.8) +
+  geom_histogram(bins = 40, fill = "aquamarine2", color = "azure3", alpha = 0.8) +
   
   # Linea verticale del Capitale Puramente Investito (Break-even)
   geom_vline(xintercept = capitale_investito_totale, color = "black", linetype = "solid", linewidth = 1) +
-  geom_text(aes(x = capitale_investito_totale, y = 0, label = "Capitale Investito"), 
-            angle = 90, vjust = -1, hjust = -0.5, color = "black", size = 3.5, fontface = "bold") +
+  
+  # Etichetta Capitale Investito
+  annotate("text", x = capitale_investito_totale, y = Inf, label = lbl_cap_investito, 
+           angle = 90, vjust = -1, hjust = 1.1, color = "black", size = 3.2, fontface = "bold") +
   
   # Linee verticali dei percentili (Pessimo, Mediano, Ottimo)
-  geom_vline(xintercept = c(p10, p50, p90), color = c("firebrick3", "orange", "springgreen4"), 
+  geom_vline(xintercept = c(p10, p50, p90), color = c("red", "orange", "green4"), 
              linetype = "dashed", linewidth = 0.8) +
   
-  # Asse X primario (Valore in Euro) e asse X secondario (Multiplo del Capitale Investito)
+  # Etichette dinamiche con Valore e CAGR agganciate in cima alle linee verticali
+  annotate("text", x = p10, y = Inf, label = lbl_pessimo, 
+           angle = 90, vjust = -1, hjust = 1.1, color = "red", size = 3.2, fontface = "bold") +
+  
+  annotate("text", x = p50, y = Inf, label = lbl_mediano, 
+           angle = 90, vjust = -1, hjust = 1.1, color = "orange", size = 3.2, fontface = "bold") +
+  
+  annotate("text", x = p90, y = Inf, label = lbl_ottimo, 
+           angle = 90, vjust = -1, hjust = 1.1, color = "green4", size = 3.2, fontface = "bold") +
+  
+  # Asse X primario (Valore in Euro) e asse X secondario aggiornato con transform
   scale_x_continuous(
     labels = scales::label_dollar(prefix = "", suffix = " €", big.mark = ".", decimal.mark = ","),
     sec.axis = sec_axis(
-      trans = ~ . / capitale_investito_totale,
+      transform = ~ . / capitale_investito_totale,
       name = "Multiplo del Capitale Investito (Valore Finale / Totale Versato)",
       labels = scales::label_number(suffix = "x", decimal.mark = ",")
     )
@@ -89,16 +151,21 @@ ggplot(df_scenari, aes(x = Valore_Finale)) +
   
   labs(
     title = "Distribuzione dei Valori Finali del Portafoglio (Monte Carlo)",
-    subtitle = paste0("Simulazione su ", n_simulazioni, " (estrazione casuale rendimento mensile dal dataset) | Orizzonte: ", orizzonte_mesi/12, " anni\n",
-                      "Valore Portafoglio negli scenari: Rosso = 10° percentile (Pessimo) | Arancio = Mediana | Verde = 90° Percentile (Ottimo)"),
+    subtitle = paste0("Simulazione su ", n_simulazioni, " (estrazione casuale rendimento mensile dal dataset) | Orizzonte: ", n_anni, " anni\n",
+                      "Analisi dei percentili storici proiettati con piano di accumulo costante | Rendimenti al lordo della tassazione (pre-tax)"),
     x = "Controvalore Finale Portafoglio (€)",
-    y = "Frequenza (Numero di Scenari)"
+    y = "Frequenza (Numero di Scenari)",
+    caption = "Made in R and with love by Alberto Frison - Source data Yahoo Finance"
   ) +
   theme_minimal(base_size = 11) +
   theme(
-    plot.title = element_text(face = "bold", size = 14),
-    plot.subtitle = element_text(color = "gray30", size = 10),
+    strip.background = element_rect(fill = "azure2", color = "azure3"),
+    strip.text = element_text(face = "bold", color = "black", size = 8.5),
     panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 14, margin = margin(b = 5)),
+    plot.subtitle = element_text(color = "black", margin = margin(b = 15)),
     axis.title.x.top = element_text(color = "blue4", size = 10, face = "italic")
   )
 
+# Visualizza il grafico aggiornato a schermo
+print(p_montecarlo)
