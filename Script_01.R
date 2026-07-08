@@ -1,25 +1,24 @@
 # ==============================================================================
-# BACKTESTING PORTAFOGLIO CON PAC E RIBILANCIAMENTO COSTANTE
+# BACKTESTING PORTAFOGLIO CON PIC, PAC E RIBILANCIAMENTO COSTANTE
 # FASE CARICAMENTO DATI STORICI PER ETF / BENCHMARK
 # ==============================================================================
-
-#0. Pulizia ambiente
-rm(list=ls())
 
 # 0. Caricamento librerie necessarie
 if (!require("tidyquant")) install.packages("tidyquant")
 if (!require("tidyverse")) install.packages("tidyverse")
 if (!require("quantmod")) install.packages("quantmod")
 library(quantmod)
-
 library(tidyverse)
 library(tidyquant)
 library(tidyverse)
 
+#0. Pulizia ambiente
+rm(list=ls())
+
 # ==============================================================================
-# 1. DEFINIZIONE DEL PORTAFOGLIO TARGET
+# 1. DEFINIZIONE DEL PORTAFOGLIO
 # ==============================================================================
-# 1. Definizione dei pesi del Portafoglio Target
+# 1. Definizione dei pesi del Portafoglio
 target_weights <- c(
   "Bond_Global"     = 0.1943, #Bong Aggregate Globali
   "World_ex_USA"    = 0.1748, #MSCI World Ex USA
@@ -53,9 +52,11 @@ tickers <- c(
   "World_Momentum"  = "XDEM.DE",  # Xtrackers MSCI World Momentum (In EUR)
   "World_Small_Cap" = "IUSN.DE"   # iShares MSCI World Small Cap (In EUR)
 )
+tickers
 
 # Mappa per ricongiungere i ticker ai nomi descrittivi delle asset class
 mappa_nomi <- tibble(symbol = tickers, asset = names(tickers))
+mappa_nomi
 
 # ==============================================================================
 # 3. DOWNLOAD DATI E CALCOLO RENDIMENTI MENSILI
@@ -72,7 +73,7 @@ for (asset_name in names(tickers)) {
   # Utilizziamo tryCatch per evitare che l'intero script si blocchi se un ticker fallisce
   tryCatch({
     # Download dei prezzi storici adjusted
-    prezzi <- getSymbols(ticker, src = "yahoo", from = "2015-01-01", auto.assign = FALSE)
+    prezzi <- getSymbols(ticker, src = "yahoo", from = "2000-01-01", auto.assign = FALSE)
     prezzi_adj <- Ad(prezzi) # Estrae solo i prezzi Adjusted (con dividendi)
     
     # Calcolo dei rendimenti mensili

@@ -1,19 +1,17 @@
 # ==============================================================================
 # 8. SIMULATORE MONTE CARLO E GRAFICO DELLA DISTRIBUZIONE FINALE
 # ==============================================================================
-library(tidyverse)
-library(ggplot2)
 
-# 1. Configurazione del Portafoglio Reale Attuale (Base ~30k €)
+# 1. Configurazione del PIC (Base ~30k €)
 somma_iniziale <- 30000
 
 portafoglio_iniziale <- target_weights * somma_iniziale
-sum(portafoglio_inziale)
+sum(portafoglio_iniziale)
 
 # Parametri Simulazione (Aumentiamo a 1.000 simulazioni per un istogramma più denso e preciso)
 orizzonte_mesi <- 240    
 quota_mensile  <- 1000   
-n_simulazioni  <- 10000   
+n_simulazioni  <- 20000   
 nomi_asset     <- names(target_weights)
 
 capitale_investito_totale <- sum(portafoglio_iniziale) + (orizzonte_mesi * quota_mensile)
