@@ -79,4 +79,3 @@ p_cumulativo <- ggplot(df_plot_cumulativo, aes(x = date, y = Valore_Indice, grou
 
 # Visualizza il grafico a schermo
 print(p_cumulativo)
-  
