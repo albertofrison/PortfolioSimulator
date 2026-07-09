@@ -21,11 +21,11 @@ library(doParallel)
 library(FinCal)
 
 # --- CONFIGURAZIONE PARAMETRI FINANZIARI (L'Unica sorgente della verità) ---
-PARAM_PIC_INIZIALE   <- 30000     # Capitale iniziale versato a inizio piano (€)
-PARAM_PAC_MENSILE    <- 1000      # Contributo ricorrente mensile (€)
-PARAM_ORIZZONTE_ANNI <- 20        # Durata complessiva della simulazione (Anni)
+PARAM_PIC_INIZIALE   <- 50000     # Capitale iniziale versato a inizio piano (€)
+PARAM_PAC_MENSILE    <- 1000 + 500      # Contributo ricorrente mensile (€)
+PARAM_ORIZZONTE_ANNI <- 12        # Durata complessiva della simulazione (Anni)
 PARAM_ORIZZONTE_MESI <- PARAM_ORIZZONTE_ANNI * 12 # Calcolo automatico della timeline
-PARAM_N_SIMULAZIONI  <- 100000    # Numero di traiettorie Monte Carlo generate (Bootstrap)
+PARAM_N_SIMULAZIONI  <- 50000    # Numero di traiettorie Monte Carlo generate (Bootstrap)
 
 # --- CONFIGURAZIONE HARDWARE (Calcolo Parallelo) ---
 CORES_DISPONIBILI <- parallel::detectCores()
@@ -70,17 +70,19 @@ TICKER_NAMES <- c(
 
 # --- Definizione dei Pesi Target del Portafoglio Lazy (Asset Allocation) ---
 PORTAFOGLIO_TARGET <- c(
-  "Bond_Global"      = 0.1943, # Bond Aggregate Globali
-  "World_ex_USA"    = 0.1748, # MSCI World Ex USA
-  "World_Equal_W"   = 0.1282, # MSCI World Equal Weight
-  "SP500"           = 0.1159, # S&P 500
-  "Emerging_Markets"= 0.0829, # MSCI Mercati Emergenti
-  "World_Value"      = 0.0739, # MSCI World Value
-  "World_Mid_Cap"   = 0.0678, # MSCI World Mid Cap
-  "Gold"            = 0.0627, # ETC Oro
-  "World_Momentum"  = 0.0547, # MSCI World Momentum
-  "World_Small_Cap" = 0.0448  # MSCI World Small Cap
+  "Bond_Global"     = 0.1943, #Bong Aggregate Globali
+  "World_ex_USA"    = 0.1748, #MSCI World Ex USA
+  "World_Equal_W"   = 0.1282, #MSCI World Equal Weight - massimo diversificatore
+  "SP500"           = 0.1159, #SP500
+  "Emerging_Markets"= 0.0829, #MSCI Mercati Emergenti
+  "World_Value"     = 0.0739, #MSCI World Value (Value)
+  "World_Mid_Cap"   = 0.0678, #MSCI World Mid Cap (Size)
+  "Gold"            = 0.0627, #ETC ORO
+  "World_Momentum"  = 0.0547, #MSCI World Momentum (Momentum)
+  "World_Small_Cap" = 0.0448  #MSCI World Small Cap (Size)
 )
+
+
 
 # Controlli di sicurezza incrociati sui vettori
 if (!all(names(TICKER_NAMES) %in% names(PORTAFOGLIO_TARGET)) || !all(names(PORTAFOGLIO_TARGET) %in% names(TICKER_NAMES))) {
@@ -513,92 +515,6 @@ p_rischio_rendimento <- ggplot() +
   )
 
 
-# ==============================================================================
-# 8. COSTRUZIONE EVOLUZIONE STORICA UNIFICATA A BASE 100
-# ==============================================================================
-
-# Elaborazione indice a Base 100 sui rendimenti reali puri degli asset storici
-df_assets_base100 <- dataset_rendimenti %>%
-  dplyr::arrange(date) %>%
-  tidyr::pivot_longer(cols = -date, names_to = "Asset", values_to = "Rendimento") %>%
-  dplyr::group_by(Asset) %>%
-  dplyr::mutate(Valore_Indice = cumprod(1 + Rendimento) * 100) %>%
-  dplyr::ungroup()
-
-LUNGHEZZA_STORICA_REALE <- nrow(dataset_rendimenti)
-DATA_FINALE_STORICA     <- max(dataset_rendimenti$date)
-
-# Funzione interna per estrarre la traiettoria simulata e troncarla alla lunghezza della serie reale
-estrai_indice_simulato <- function(valore_percentile, nome_legenda) {
-  indice_scenario    <- which.min(abs(risultati_scenari - valore_percentile))
-  traiettoria        <- matrice_traiettorie[indice_scenario, ]
-  valori_t_meno_1    <- traiettoria[1:PARAM_ORIZZONTE_MESI]
-  valori_t           <- traiettoria[2:(PARAM_ORIZZONTE_MESI + 1)]
-  rendimenti_mensili <- ((valori_t - PARAM_PAC_MENSILE) / valori_t_meno_1) - 1
-  
-  # Troncatura paranoica per evitare sforamenti degli indici degli assi nel grafico temporale
-  rendimenti_troncati <- rendimenti_mensili[1:LUNGHEZZA_STORICA_REALE]
-  valore_indice       <- cumprod(1 + rendimenti_troncati) * 100
-  
-  return(tibble::tibble(
-    date          = dataset_rendimenti$date,
-    Asset         = nome_legenda, 
-    Valore_Indice = valore_indice
-  ))
-}
-
-df_p10_indice <- estrai_indice_simulato(p10, "PORTAFOGLIO P10")
-df_p50_indice <- estrai_indice_simulato(p50, "PORTAFOGLIO P50")
-df_p90_indice <- estrai_indice_simulato(p90, "PORTAFOGLIO P90")
-
-# Consolidamento finale in unico data frame per l'ottimizzazione dei vettori di testo
-df_tutti_indici <- dplyr::bind_rows(df_assets_base100, df_p10_indice, df_p50_indice, df_p90_indice)
-
-df_labels_complessivo <- df_tutti_indici %>%
-  dplyr::filter(date == DATA_FINALE_STORICA) %>%
-  dplyr::arrange(Valore_Indice)
-
-# Algoritmo di scorrimento verticale preventivo delle etichette (Risoluzione sovrapposizioni di testo)
-SOGLIA_SPAZIO_Y <- 15.0  
-griglia_y       <- df_labels_complessivo$Valore_Indice
-
-if (length(griglia_y) > 1) {
-  for (i in 2:length(griglia_y)) {
-    if ((griglia_y[i] - griglia_y[i-1]) < SOGLIA_SPAZIO_Y) {
-      griglia_y[i] <- griglia_y[i-1] + SOGLIA_SPAZIO_Y
-    }
-  }
-}
-df_labels_complessivo$Y_Aggiustato <- griglia_y
-
-# Costruzione esplicita della palette di mappatura dei colori sui label testuali del grafico
-palette_labels  <- rep("gray50", length(unique(df_assets_base100$Asset)))
-names(palette_labels) <- unique(df_assets_base100$Asset)
-palette_labels["PORTAFOGLIO P10"] <- PAL_SCEN_P10
-palette_labels["PORTAFOGLIO P50"] <- PAL_SCEN_P50
-palette_labels["PORTAFOGLIO P90"] <- PAL_SCEN_P90
-
-# --- 8.1 Plot G7: Evoluzione Storica Unificata ---
-p_evoluzione_unificata <- ggplot() +
-  geom_hline(yintercept = 100, color = "orange", linetype = "dashed", linewidth = 0.6) +
-  geom_line(data = df_assets_base100, aes(x = date, y = Valore_Indice, group = Asset), color = "gray50", linewidth = 0.6, alpha = 0.4) +
-  geom_line(data = df_p10_indice, aes(x = date, y = Valore_Indice), color = PAL_SCEN_P10, linewidth = 1.3) +
-  geom_line(data = df_p50_indice, aes(x = date, y = Valore_Indice), color = PAL_SCEN_P50, linewidth = 1.3) +
-  geom_line(data = df_p90_indice, aes(x = date, y = Valore_Indice), color = PAL_SCEN_P90, linewidth = 1.3) +
-  geom_text(data = df_labels_complessivo, aes(x = date, y = Y_Aggiustato, label = Asset, color = Asset), hjust = 0, nudge_x = 45, size = 2.6, fontface = "bold") +
-  scale_y_continuous(labels = scales::label_number(suffix = " €", big.mark = ".", decimal.mark = ",")) +
-  scale_x_date(date_labels = "%Y", date_breaks = "2 years", expand = expansion(mult = c(0.01, 0.25))) +
-  scale_color_manual(values = palette_labels) +
-  labs(
-    title = "Evoluzione Storica Unificata vs Traiettorie Monte Carlo",
-    subtitle = "Rendimenti puri a Base 100 (No PAC) con allineamento dinamico dei label nativi",
-    x = "Anno", y = "Valore dell'Indice (Base 100 iniziale)", caption = GLOBAL_CAPTION
-  ) +
-  theme_minimal(base_size = GLOBAL_THEME_SIZE) +
-  theme(
-    panel.grid.minor = element_blank(), plot.title = element_text(face = "bold", size = 14),
-    axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none"
-  )
 
 
 # ==============================================================================
@@ -618,7 +534,6 @@ print(p_heatmap_corr)
 print(p_traiettorie_evoluzione)
 print(p_montecarlo_istogramma)
 print(p_rischio_rendimento)
-print(p_evoluzione_unificata)
 
 # Chiusura formale del canale di esportazione hardware per il consolidamento del file su disco
 dev.off()
@@ -628,3 +543,4 @@ cat("===========================================================================
 cat(" PIPELINE ESEGUITA SENZA ERRORI STRUTTURALI\n")
 cat(" Generato file PDF contabile con", length(dev.list()), "fogli di analisi visuale.\n")
 cat("==============================================================================\n")
+
